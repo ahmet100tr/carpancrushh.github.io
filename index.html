@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Çarpan Tarlası</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="menu">
+        <div class="menu-title">Çarpan Tarlası</div>
+        <button class="level-btn" onclick="startLevel(8)">Level 8</button>
+        <button class="level-btn" onclick="startLevel(16)">Level 16</button>
+        <button class="level-btn" onclick="startLevel(24)">Level 24</button>
+        <button class="level-btn" onclick="startLevel(30)">Level 30</button>
+        <button class="level-btn" onclick="startLevel(60)">Level 60</button>
+    </div>
+
+    <div id="game">
+        <div id="targetText"></div>
+        <div id="scoreText"></div>
+        <div class="grid" id="grid"></div>
+        <div id="msg"></div>
+    </div>
+
+    <div id="victoryOverlay">
+        <div class="victory-box">
+            <div class="victory-title">HARİKA!</div>
+            <div class="victory-desc">Seviye Tamamlandı</div>
+            <button class="menu-btn" onclick="backToMenu()">Ana Menüye Dön</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
