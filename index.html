@@ -2,37 +2,67 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <title>Çarpan Tarlası</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <div id="background-layer"></div>
+
     <div id="menu">
-        <div class="menu-title">Çarpan Tarlası</div>
-        <button class="level-btn" onclick="startLevel(8)">Level 8</button>
-        <button class="level-btn" onclick="startLevel(16)">Level 16</button>
-        <button class="level-btn" onclick="startLevel(24)">Level 24</button>
-        <button class="level-btn" onclick="startLevel(30)">Level 30</button>
-        <button class="level-btn" onclick="startLevel(60)">Level 60</button>
+        <div class="menu-content">
+            <div class="menu-title">Çarpan Tarlası</div>
+            <div class="total-score-display" id="menuScoreDisplay">Puan: 0</div>
+            
+            <div class="levels-scroll-area">
+                <div class="levels-container">
+                    <button class="level-btn" onclick="startLevel(8)">8</button>
+                    <button class="level-btn" onclick="startLevel(12)">12</button>
+                    <button class="level-btn" onclick="startLevel(16)">16</button>
+                    <button class="level-btn" onclick="startLevel(18)">18</button>
+                    <button class="level-btn" onclick="startLevel(20)">20</button>
+                    <button class="level-btn" onclick="startLevel(24)">24</button>
+                    <button class="level-btn" onclick="startLevel(27)">27</button>
+                    <button class="level-btn" onclick="startLevel(30)">30</button>
+                    <button class="level-btn" onclick="startLevel(36)">36</button>
+                    <button class="level-btn" onclick="startLevel(40)">40</button>
+                    <button class="level-btn" onclick="startLevel(48)">48</button>
+                    <button class="level-btn" onclick="startLevel(60)">60</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="game">
-        <div id="targetText"></div>
-        <div id="scoreText"></div>
+        <div id="hud-container">
+            <div class="hud-box target-box">
+                <div class="hud-label">HEDEF</div>
+                <div class="hud-value" id="targetVal">0</div>
+            </div>
+            <div class="hud-box progress-box">
+                <div class="hud-label">İLERLEME</div>
+                <div class="hud-value" id="progressVal">0/24</div>
+            </div>
+            <div class="hud-box score-box">
+                <div class="hud-label">TOPLAM PUAN</div>
+                <div class="hud-value" id="globalScoreVal">0</div>
+            </div>
+        </div>
+
         <div class="grid" id="grid"></div>
         <div id="msg"></div>
     </div>
 
     <div id="victoryOverlay">
         <div class="victory-box">
-            <div class="victory-title">YİEEEE:)</div>
+            <div class="victory-title">MÜKEMMEL!</div>
             <div class="victory-desc">Seviye Tamamlandı</div>
+            <div class="victory-score" id="victoryScore"></div>
             <button class="menu-btn" onclick="backToMenu()">Ana Menüye Dön</button>
         </div>
     </div>
 
     <script src="script.js"></script>
 </body>
-
 </html>
