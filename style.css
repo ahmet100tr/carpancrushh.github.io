@@ -56,8 +56,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Menü geçiş animasyonu */
-    transition: opacity 0.3s;
 }
 
 .menu-content {
@@ -139,22 +137,6 @@ body {
     z-index: 10; 
 }
 
-/* --- YENİ EKLENEN AÇILIŞ ANİMASYONU --- */
-.game-enter {
-    animation: gamePopIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes gamePopIn {
-    from { 
-        opacity: 0; 
-        transform: scale(0.6); /* Küçük başla */
-    }
-    to { 
-        opacity: 1; 
-        transform: scale(1); /* Normale dön */
-    }
-}
-
 #hud-container {
     width: 90%;
     max-width: 420px;
@@ -223,7 +205,14 @@ body {
     transition: box-shadow 0.2s, border-color 0.2s;
 }
 
-/* Hata Animasyonu */
+.grid.start-animation {
+    animation: gridIntro .8s ease forwards;
+}
+@keyframes gridIntro {
+    from {opacity: 0; transform: scale(.7);}
+    to   {opacity: 1; transform: scale(1);}
+}
+
 .grid.error-shake {
     animation: shakeRed 0.4s ease-in-out;
     box-shadow: 0 0 30px #ff0000, inset 0 0 10px #ff0000;
@@ -244,6 +233,9 @@ body {
     100% { transform: translate(0, 0) scale(1); }
 }
 
+.grid.fade-out { opacity: .3; transition: opacity .4s; }
+.grid.fade-in  { opacity: 1;  transition: opacity .4s; }
+
 /* ====================== HÜCRE ====================== */
 .cell {
     width: 100%;
@@ -259,7 +251,7 @@ body {
     text-shadow: 0 0 5px #0088ff;
     position: relative;
     overflow: visible;
-    transition: transform .18s ease, border-color 0.2s, box-shadow 0.2s;
+    transition: transform .18s ease, border-color 0.2s, box-shadow 0.2s, background-color 0.3s;
     cursor: grab;
     touch-action: none;
     z-index: 25; 
@@ -276,6 +268,32 @@ body {
 }
 .cell.prime-5 {
     border-color: #ffcc00; color: #ffffcc; text-shadow: 0 0 10px #ffcc00; box-shadow: inset 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+/* --- YENİ: İPUCU AKTİF (Yanıp Sönen Dolgu) --- */
+/* Normal Hücreler İçin (Mavi) */
+.cell.hint-active {
+    background-color: rgba(0, 136, 255, 0.5) !important;
+    box-shadow: 0 0 20px #0088ff;
+    animation: pulseHint 1s infinite alternate;
+}
+/* Asal Sayılar İçin (Kendi renkleri) */
+.cell.prime-2.hint-active {
+    background-color: rgba(255, 0, 85, 0.5) !important;
+    box-shadow: 0 0 20px #ff0055;
+}
+.cell.prime-3.hint-active {
+    background-color: rgba(0, 255, 102, 0.5) !important;
+    box-shadow: 0 0 20px #00ff66;
+}
+.cell.prime-5.hint-active {
+    background-color: rgba(255, 204, 0, 0.5) !important;
+    box-shadow: 0 0 20px #ffcc00;
+}
+
+@keyframes pulseHint {
+    from { opacity: 0.6; }
+    to { opacity: 1; }
 }
 
 #msg {
@@ -307,16 +325,25 @@ body {
     to   {transform: translate(var(--dx),var(--dy)) scale(.1); opacity: 0;}
 }
 
-/* KAYAN BONUS YAZISI */
-.floating-bonus {
+/* KAYAN YAZILAR (BONUS ve CEZA) */
+.floating-bonus, .floating-penalty {
     position: fixed; 
-    color: #ffd700;
     font-weight: bold;
     font-size: 16px;
-    text-shadow: 0 0 5px #ff8800;
     pointer-events: none;
     z-index: 1000;
     animation: floatUpFade 2s ease-out forwards;
+}
+
+.floating-bonus {
+    color: #ffd700;
+    text-shadow: 0 0 5px #ff8800;
+}
+
+/* Yeni Ceza Efekti */
+.floating-penalty {
+    color: #ff3333;
+    text-shadow: 0 0 5px #ff0000;
 }
 
 @keyframes floatUpFade {
