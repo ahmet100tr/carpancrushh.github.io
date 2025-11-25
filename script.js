@@ -366,7 +366,7 @@ function showFloatingPenalty() {
     let floater = document.createElement("div");
     floater.className = "floating-penalty";
     floater.textContent = "İpucu -8";
-    floater.style.left = (rect.left + 10) + "px"; 
+    floater.style.left = (rect.left + 30) + "px"; 
     floater.style.top = (rect.bottom + 5) + "px";
 
     document.body.appendChild(floater);
@@ -632,4 +632,5 @@ function createStars() {
         bg.appendChild(star);
     }
 }
+
 
