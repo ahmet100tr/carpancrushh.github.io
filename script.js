@@ -7,13 +7,15 @@ let totalPopped = 0;
 // GLOBAL PUAN SİSTEMİ
 let globalScore = parseInt(localStorage.getItem("carpanTarlasi_score")) || 0;
 
-// İPUCU ZAMANLAYICISI
+// İPUCU ZAMANLAYICISI & OYUN DURUMU
 let hintTimer = null;
+let isPaused = false; // Oyun durdu mu?
 
 /* ====================== SES MOTORU (WEB AUDIO API) ====================== */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(type) {
+    if(isPaused) return; // Oyun durduysa ses çalma
     if (audioCtx.state === 'suspended') audioCtx.resume(); 
 
     const osc = audioCtx.createOscillator();
@@ -145,21 +147,21 @@ function renderGrid() {
     }
 }
 
-/* ====================== CANLI SÜRÜKLEME (LIVE DRAG) & HATA ====================== */
+/* ====================== CANLI SÜRÜKLEME & KONTROLLER ====================== */
 let dragIndex = null;
 let touchStartY = 0;
-let activeCell = null; // Şu an sürüklenen DOM elementi
+let activeCell = null; 
 
 function startDrag(e) {
-    // Sadece sol tık veya dokunma
+    // --- DEĞİŞİKLİK: OYUN DURAKLATILDIYSA HİÇBİR ŞEY YAPMA ---
+    if(isPaused) return;
+
     if (e.type === 'mousedown' && e.button !== 0) return;
-    
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
     resetHintTimer();
     clearHints();
 
-    // Tıklanan hedefi bul (sayıya tıklansa bile ana kutuyu al)
     let target = e.target.closest('.cell');
     if(!target) return;
 
@@ -167,85 +169,56 @@ function startDrag(e) {
     dragIndex = Number(activeCell.dataset.i);
 
     if(e.type === 'touchstart') {
-        // --- DOKUNMATİK BAŞLANGIÇ ---
         touchStartY = e.touches[0].clientY;
-        // Parmağı takip etmesi için 'touchmove' dinleyicisi ekle
-        // passive: false önemli, çünkü preventDefault kullanacağız
+        activeCell.style.transition = 'none'; 
+        activeCell.style.zIndex = 1000; 
+        activeCell.style.transform = 'scale(1.1)';
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd);
     } else {
-        // --- MOUSE BAŞLANGIÇ ---
         document.addEventListener('mouseup', endDragMouse);
     }
 }
 
-// --- CANLI TAKİP (TOUCHMOVE) ---
 function handleTouchMove(e) {
-    // Sayfanın kaymasını engelle (Scroll kill)
     e.preventDefault(); 
-    
     if(!activeCell) return;
-
-    // Parmağın anlık konumu ve başlangıca göre farkı
     let currentY = e.touches[0].clientY;
     let diffY = currentY - touchStartY;
-
-    // Görsel Geri Bildirim: Kutucuğu parmakla beraber hareket ettir
-    // Maksimum 100px yukarı veya aşağı gitmesine izin ver (Görsel sınır)
-    let moveY = Math.max(-100, Math.min(100, diffY));
-    
-    // CSS transform ile anlık konumlandırma
-    activeCell.style.transform = `translateY(${moveY}px)`;
-    activeCell.style.zIndex = 100; // Diğerlerinin üzerinde görünsün
-    // CSS geçişlerini geçici olarak kapat ki anlık tepki versin
-    activeCell.style.transition = 'none';
+    activeCell.style.transform = `scale(1.1) translateY(${diffY}px)`;
 }
 
-// --- DOKUNMA BİTİŞ (TOUCHEND) ---
 async function handleTouchEnd(e) {
     document.removeEventListener('touchmove', handleTouchMove);
     document.removeEventListener('touchend', handleTouchEnd);
 
     if(!activeCell) return;
 
-    // Bırakılan yerdeki son parmak pozisyonu
     let endY = e.changedTouches[0].clientY;
     let diffY = endY - touchStartY;
     
-    // Görsel değişiklikleri sıfırla (CSS eski haline dönsün)
+    activeCell.style.transition = ''; 
     activeCell.style.transform = ''; 
     activeCell.style.zIndex = '';
-    activeCell.style.transition = ''; // Transition'ı geri aç
 
-    // EŞİK DEĞERİ: En az 40 piksel sürüklenmiş olmalı
     const SWIPE_THRESHOLD = 40;
     let targetIndex = null;
 
-    // Aşağı mı Yukarı mı?
     if (diffY > SWIPE_THRESHOLD) {
-        // AŞAĞI SWIPE -> Alt komşu var mı?
-        if (dragIndex + COLS < ROWS * COLS) {
-            targetIndex = dragIndex + COLS;
-        }
+        if (dragIndex + COLS < ROWS * COLS) targetIndex = dragIndex + COLS;
     } else if (diffY < -SWIPE_THRESHOLD) {
-        // YUKARI SWIPE -> Üst komşu var mı?
-        if (dragIndex - COLS >= 0) {
-            targetIndex = dragIndex - COLS;
-        }
+        if (dragIndex - COLS >= 0) targetIndex = dragIndex - COLS;
     }
 
-    activeCell = null; // Temizle
+    activeCell = null; 
 
-    // Geçerli bir hedef varsa işlemi yap
     if (targetIndex !== null) {
         await executeMove(dragIndex, targetIndex);
     } else {
-        // Hamle yapılmadı, ipucunu tekrar başlat
         resetHintTimer();
     }
 }
 
-// --- MOUSE BİTİŞ (ESKİ MANTIK) ---
 async function endDragMouse(e) {
     document.removeEventListener('mouseup', endDragMouse);
     activeCell = null;
@@ -268,18 +241,17 @@ async function endDragMouse(e) {
     }
 }
 
-// --- ORTAK HAMLE ÇALIŞTIRICI (Touch ve Mouse için) ---
 async function executeMove(fromIdx, toIdx) {
-    playSound('move'); // Hamle sesi
+    playSound('move');
     await softSwap(fromIdx, toIdx);
     
     let matches = findMatches();
     if (matches.length > 0) {
         await processMove();
     } else {
-        playSound('error'); // Hata sesi
+        playSound('error');
         await triggerErrorEffect();
-        await softSwap(fromIdx, toIdx); // Geri al
+        await softSwap(fromIdx, toIdx);
         resetHintTimer();
     }
 }
@@ -312,9 +284,19 @@ function softSwap(a, b) {
     });
 }
 
+/* ====================== KULLANIM KILAVUZU İŞLEVLERİ ====================== */
+function openManual() {
+    document.getElementById("manualOverlay").style.display = "flex";
+}
+
+function closeManual() {
+    document.getElementById("manualOverlay").style.display = "none";
+}
+
 /* ====================== İPUCU SİSTEMİ ====================== */
 function resetHintTimer() {
     if(hintTimer) clearTimeout(hintTimer);
+    if(isPaused) return; // Oyun durduysa sayaç başlatma
     hintTimer = setTimeout(showHint, 25000);
 }
 
@@ -324,15 +306,14 @@ function clearHints() {
 }
 
 function showHint() {
+    if(isPaused) return; // Duraklatıldıysa ipucu verme
     let move = findPossibleMove();
     
     if(move) {
         playSound('hint');
-
-        globalScore -= 15;
+        globalScore -= 8;
         localStorage.setItem("carpanTarlasi_score", globalScore);
         updateScoreUI();
-        
         showFloatingPenalty();
 
         let g = document.getElementById("grid");
@@ -366,7 +347,7 @@ function showFloatingPenalty() {
     let floater = document.createElement("div");
     floater.className = "floating-penalty";
     floater.textContent = "İpucu -8";
-    floater.style.left = (rect.left + 30) + "px"; 
+    floater.style.left = (rect.left + 10) + "px"; 
     floater.style.top = (rect.bottom + 5) + "px";
 
     document.body.appendChild(floater);
@@ -402,7 +383,6 @@ function spawnParticles(i) {
     }
 }
 
-/* ====================== PUANLAMA & BONUS ====================== */
 function popRow(r) {
     let base = r * COLS;
     let earnedPoints = 0;
@@ -533,6 +513,24 @@ async function processMove() {
     }
 }
 
+/* ====================== DURAKLAT MENÜSÜ İŞLEVLERİ ====================== */
+function pauseGame() {
+    isPaused = true;
+    if(hintTimer) clearTimeout(hintTimer); // Sayacı durdur
+    document.getElementById("pauseOverlay").style.display = "flex";
+}
+
+function resumeGame() {
+    isPaused = false;
+    document.getElementById("pauseOverlay").style.display = "none";
+    resetHintTimer(); // Sayacı yeniden başlat
+}
+
+function restartLevel() {
+    resumeGame(); // Önce menüyü kapat
+    startLevel(currentLevel); // Leveli baştan başlat
+}
+
 /* ====================== YÖNETİM & UI ====================== */
 async function generatePlayableBoard() {
     let ok = false;
@@ -549,6 +547,7 @@ async function generatePlayableBoard() {
 
 async function startLevel(lvl) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
+    isPaused = false; // Başlangıçta duraklatılmamış olsun
     
     currentLevel = lvl;
     totalPopped = 0;
@@ -601,6 +600,8 @@ function showVictory() {
 
 function backToMenu() {
     if(hintTimer) clearTimeout(hintTimer);
+    isPaused = false;
+    document.getElementById("pauseOverlay").style.display = "none"; // Duraklat menüsünü gizle
     
     document.getElementById("victoryOverlay").style.display = "none";
     document.getElementById("game").style.display = "none";
@@ -632,5 +633,3 @@ function createStars() {
         bg.appendChild(star);
     }
 }
-
-
